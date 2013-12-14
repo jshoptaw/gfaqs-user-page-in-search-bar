@@ -2,25 +2,17 @@ GameFAQs User Page in Search Bar
 ================================
 Adds the "Find a User" search from the [Users](http://gamefaqs.com/users/) page to the regular GameFAQs search bar. The implementation is different based on which site display CSS you are using:
 
-*	Replaces "Search:" label/link with dropdown for selecting either "Search:" or "User Page:"
+*	Adds a dropdown with radio buttons that appears when search bar is focused
 
-	*	V12
+	*	v13
 	*	Ninestalgia
-	*	Dark Honeycomb
+	*	Awesome Mode
 
-*	Adds "User Page" option to platform jumper dropdown in search bar
+*	Adds a dropdown with a selection dropdown menu when search bar is focused
 
-	*	V11
-	*	V10</li>
-	*	V9</li>
-	*	SpotFAQs</li>
-	*	Not Default</li>
-	*	Dark GameFAQs</li>
-	*	Awesome Mode</li>
+	*	v12
 
-*	Adds "User Page" checkbox below search bar
-
-	*	RetroClassic</li>
+The "Minimalist" style is currently unsupported.
 
 
 Use with one of the following browser extensions:
@@ -39,6 +31,12 @@ Use with one of the following browser extensions:
 
 Release Notes
 =============
+
+Version 1.1
+-----------
+_Released 2013-12-14_
+
+*	Completely rewritten to work with v13. From this point on, no site styles prior to v13 will be supported. This includes Throwback Mode.
 
 Version 1.0
 -----------

@@ -2,156 +2,207 @@
 // @name           GameFAQs User Page in Search Bar
 // @namespace      OTACON120
 // @author         OTACON120
-// @version        1.0
+// @version        1.1
 // @description    Adds "User Page" option to GameFAQs search bar
 // @updateURL      http://userscripts.org/scripts/source/149779.meta.js
 // @downloadURL    http://userscripts.org/scripts/source/149779.user.js
-// @website        http://otacon120.com/user-scripts/gamefaqs-related/user-page-in-search-bar/
+// @website        http://otacon120.com/scripts/user-page-in-search-bar/
 // @include        http://www.gamefaqs.com/*
 // @match          http://www.gamefaqs.com/*
 // @exclude        http://www.gamefaqs.com/users
 // @exclude        http://www.gamefaqs.com/users/
+// @grant          GM_addStyle
 // ==/UserScript==
-'use strict';
 
-var searchForm		= document.getElementsByClassName('search')[0],
-	searchField		= searchForm.getElementsByTagName('input')[0],
-	jumperInSearch	= (searchForm.getElementsByTagName('select')[0] ? true : false),
-	searchSubmit	= (jumperInSearch ? searchForm.getElementsByClassName('field submit')[0] : searchForm.getElementsByTagName('button')[0]),
-	userPageOption = document.createElement('option'),
-	getKey = new XMLHttpRequest,
-	formKey = document.createElement('div'),
-	inputKey = document.createElement('input');
+/**
+ * Fallback for Chrome which doesn't support GM_addStyle
+ */
+if ( !this.GM_addStyle ) {
+	this.GM_addStyle = function( css ) {
+		var newStyle = document.createElement( 'style' );
 
-// Setup user page option for dropdowns
-userPageOption.value		= 'user-page';
-userPageOption.textContent	= 'User Page';
+		newStyle.type        = 'text/css';
+		newStyle.textContent = css;
+
+		document.head.appendChild( newStyle );
+	};
+}
+
+/**
+ * Get specified CSS property value
+ * @param  {node}   el        HTML Element from which to grab CSS
+ * @param  {string} styleProp CSS property to grab
+ * @return {string}           Value of CSS property
+ */
+function getStyle(el, styleProp) {
+	return document.defaultView.getComputedStyle(el, null).getPropertyValue(styleProp);
+}
+
+/**
+ * Toggle search form between game search and user search
+ */
+function changeSearch() {
+	var sfAction, sfMethod, sfPlaceholder;
+
+	switch ( this.value ) {
+		case 'find':
+			sfAction      = '/users/';
+			sfMethod      = 'post';
+			sfPlaceholder = 'Search Users';
+			break;
+
+		case 'game':
+			sfAction      = '/search/index.html';
+			sfMethod      = 'get';
+			sfPlaceholder = 'Search GameFAQs';
+			break;
+	}
+
+		searchForm.action       = sfAction;
+		searchForm.method       = sfMethod;
+		searchField.name        = this.value;
+		searchField.placeholder = sfPlaceholder;
+}
+
+function sdOnFocus() {
+	searchDrawer.className += 'active';
+}
+
+function sdOnBlur() {
+	searchDrawer.className = searchDrawer.className.replace( 'active', '' );
+}
+
+var i, searchDrawerDD, searchDrawerRD, leftPos, rightPos, bottomPos, sdHeight, sdBorderColor,
+	v12Style        = document.head.querySelector( 'link[href^="/css_wide/v12"]' ), // Check if using v12 style
+	isMinimal       = document.head.querySelector( 'link[href^="/css_wide/cus_minimal"]' ), // Check if using Minimalist style
+	is800           = document.head.querySelector( 'link[href^="/css_wide/v12_new_800px"]' ), // Check if using v12 800px style
+	mastheadStrip   = document.getElementsByClassName('masthead_strip')[0],
+	searchForm      = document.getElementsByClassName( 'masthead_search' )[0].getElementsByClassName( 'search' )[0],
+	searchField     = document.getElementById( 'searchtextbox' ),
+	searchSubmit    = searchForm.getElementsByClassName( 'icon icon-search' )[0],
+	getKey          = new XMLHttpRequest(),
+	searchDrawer    = document.createElement( 'div' ),
+	formKey         = document.createElement( 'div' ),
+	inputKey        = document.createElement( 'input' );
+
+if ( isMinimal )
+	throw "stop execution";
+
+searchDrawer.id        = 'o120-user-page-drawer';
+
+if ( v12Style ) {
+	searchDrawer.innerHTML = '<select id="o120-search-select" size="1" class="o120-search-select"><option value="game">Search GameFAQs</option><option value="find">Search Users</option></select>';
+
+	searchDrawerDD          = searchDrawer.getElementsByClassName( 'o120-search-select' )[0];
+	searchDrawerDD.onchange = changeSearch;
+	searchDrawerDD.onfocus  = sdOnFocus;
+	searchDrawerDD.onblur   = sdOnBlur;
+} else {
+	searchDrawer.innerHTML = '<div id="o120-games-rd-contain" class="o120-rd-contain"><input type="radio" id="o120-games-rd" class="o120-uprd" name="o120-uprd" value="game" checked="checked" /> <label for="o120-games-rd"> Search GameFAQs</label></div><div id="o120-user-page-rd-contain" class="o120-rd-contain"><input type="radio" id="o120-user-page-rd" class="o120-uprd" name="o120-uprd" value="find" /> <label for="o120-user-page-rd">Search Users</label></div>';
+
+	searchDrawerRD         = searchDrawer.getElementsByClassName( 'o120-uprd' );
+
+for ( i = 0; i < searchDrawerRD.length; i++ ) {
+	searchDrawerRD[ i ].onclick = changeSearch;
+	searchDrawerRD[ i ].onfocus = sdOnFocus;
+	searchDrawerRD[ i ].onblur  = sdOnBlur;
+}
+}
 
 // Grab hidden key from regular user page search on Users page
-getKey.open('POST', '/users/', false);
-getKey.setRequestHeader('Connection', 'close');
+getKey.open( 'POST', '/users/', false );
+getKey.setRequestHeader( 'Connection', 'close' );
 getKey.send();
-formKey.id				= 'formKey';
+formKey.id				= 'o120-formKey';
 formKey.innerHTML		= getKey.responseText;
 formKey.style.display	= 'none';
-document.body.appendChild(formKey);
-formKey					= formKey.getElementsByClassName('col')[1].firstChild.getElementsByTagName('form')[0].firstChild.value;
-document.body.removeChild(document.getElementById('formKey'));
+document.body.appendChild( formKey );
+formKey					= formKey.getElementsByClassName( 'span4' )[0].firstChild.getElementsByTagName( 'form' )[0].firstChild.value;
+document.body.removeChild(document.getElementById( 'o120-formKey' ));
 inputKey.type			= 'hidden';
 inputKey.value			= formKey;
 inputKey.name			= 'key';
-searchForm.appendChild(inputKey);
+searchForm.getElementsByTagName( 'fieldset' )[0].appendChild( inputKey );
 
-function changeToUP() {
-	searchForm.action	= '/users/';
-	searchForm.method	= 'post';
-	searchField.name	= 'find';
-}
+searchForm.getElementsByTagName( 'fieldset' )[0].insertBefore( searchDrawer, inputKey );
 
-function changeToSearch() {
-	searchForm.action	= '/search/index.html';
-	searchForm.method	= 'get';
-	searchField.name	= 'game';
-}
+sdHeight = getStyle( searchDrawer, 'height' );
 
-function getLabelStyle(elem, prop) {
-	return window.getComputedStyle(elem, null).getPropertyValue(prop);
-}
-
-// If using V11 or lower, add "User Page" as option to platform selector in search form
-if (jumperInSearch && getLabelStyle(searchForm.getElementsByClassName('platform')[0], 'display') != 'none') {
-	var platformJumper = searchForm.getElementsByTagName('select')[0];
-
-	//Change regular search form attributes to match user page search, or switch back to normal
-	platformJumper.onchange = function() {
-		if (this.options[this.selectedIndex].value === 'user-page') {
-			changeToUP();
-		} else {
-			changeToSearch();
-		}
-	}
-
-	platformJumper.insertBefore(userPageOption, platformJumper.options[0]);
-} else if (getLabelStyle(searchForm.getElementsByTagName('a')[0].parentNode, 'display') != 'none') { // Using V12 or something custom, so let's change the "Search:" label to a dropdown since the platform jumper is now separate
-	var searchLabel		= searchForm.getElementsByTagName('a')[0],
-		searchDDContain	= document.createElement('div'),
-		searchDD		= document.createElement('select'),
-		searchDDFacade	= document.createElement('div'),
-		searchOption	= document.createElement('option'),
-		searchDDCSS		= document.createElement('style');
-
-	searchDDCSS.id					= 'user-page-search';
-	searchDDCSS.type				= 'text/css';
-	searchDDCSS.textContent			= (document.getElementById('searchbox') && getLabelStyle(document.getElementById('searchbox').getElementsByClassName('mh_wrap')[0].getElementsByClassName('search')[0], 'width') == '260px' ? '#searchbox form.search {width: 300px !important;}' : '') + '#searchDD-contain {position: relative; display: inline-block; white-space: nowrap;} #searchDD {opacity: 0; cursor: pointer;} #searchDDFacade {position: absolute; z-index: 0; background: transparent; border: none; font-size: ' + getLabelStyle(searchLabel, 'font-size') + '; color: ' + getLabelStyle(searchLabel, 'color') + '; font-weight: ' + getLabelStyle(searchLabel, 'font-weight') + '; right: ' + (jumperInSearch ? '0' : '8px') + ';} #searchDD-contain, #searchDDFacade, #searchDD {text-align: right; height: ' + getLabelStyle(searchLabel, 'height') + '; line-height: ' + getLabelStyle(searchLabel, 'line-height') + '; vertical-align: ' + getLabelStyle(searchLabel, 'vertical-align') + ';} .up-dd-arrow {font-size: .8em;}';
-	document.head.appendChild(searchDDCSS);
-
-	searchDDContain.id			= 'searchDD-contain';
-	searchDD.id					= 'searchDD';
-	searchDDFacade.id			= 'searchDDFacade';
-	searchDDFacade.innerHTML	= '<span class="up-dd-arrow">&#9660;</span>Search: ';
-	searchOption.value			= 'search';
-	searchOption.textContent	= 'Search:';
-
-	if (jumperInSearch) {
-		searchDDContain.className = 'name';
-	}
-
-	searchDD.onchange = function() {
-		switch(this.options[this.selectedIndex].value) {
-			case 'user-page':
-				changeToUP();
-				searchDDFacade.innerHTML = '<span class="up-dd-arrow">&#9660;</span>' + this.options[this.selectedIndex].textContent;
-				break;
-
-			case 'search':
-				changeToSearch();
-				searchDDFacade.innerHTML = '<span class="up-dd-arrow">&#9660;</span>' + this.options[this.selectedIndex].textContent;
-				break;
-		}
-	}
-
-	userPageOption.innerHTML += ':';
-
-	searchDD.appendChild(searchOption);
-	searchDD.appendChild(userPageOption);
-
-	searchDDContain.appendChild(searchDDFacade);
-	searchDDContain.appendChild(searchDD);
-
-	if (jumperInSearch) {
-		searchLabel.parentNode.parentNode.removeChild(searchLabel.parentNode);
-		searchForm.getElementsByClassName('search_term')[0].insertBefore(searchDDContain, searchField.parentNode);
-	} else {
-		searchForm.removeChild(searchLabel);
-		searchForm.insertBefore(searchDDContain, searchField);
-	}
+if ( v12Style ) {
+	leftPos   = ( is800 ? 0 : 45 ) + 'px';
+	rightPos  = 0;
+	bottomPos = 'calc(((' + getStyle( mastheadStrip, 'height' ) + ' - ' + getStyle( searchDrawer.parentNode, 'height' ) + ') / 2) - ' + sdHeight + ' - 10px)';
+	sdBorder  = getStyle( mastheadStrip, 'border-bottom' );
 } else {
-	var userPageCBContain		= document.createElement('div'),
-		userPageCB				= document.createElement('input'),
-		userPageCBLabel			= document.createElement('label'),
-		userPageCBCSS			= document.createElement('style');
-
-	userPageCBCSS.id			= 'user-page-search';
-	userPageCBCSS.type			= 'text/css';
-	userPageCBCSS.textContent	= '#searchbox form.search {overflow: display !important;} #user-page-cb-label {color: ' + getLabelStyle(document.getElementById('quicknav').getElementsByTagName('a')[0], 'color') + ';}';
-
-	userPageCBContain.id		= 'user-page-contain';
-	userPageCB.type				= 'checkbox';
-	userPageCB.id				= 'user-page-cb';
-	userPageCBLabel.setAttribute('for', 'user-page-cb');
-	userPageCBLabel.id			= 'user-page-cb-label';
-	userPageCBLabel.innerHTML	= ' User Page';
-	userPageCB.onclick			= userPageCBLabel.onclick = function() {
-		if (userPageCB.checked) {
-			changeToUP();
-		} else {
-			changeToSearch();
-		}
-	}
-
-	document.head.appendChild(userPageCBCSS);
-	userPageCBContain.appendChild(userPageCB);
-	userPageCBContain.appendChild(userPageCBLabel);
-
-	searchForm.appendChild(userPageCBContain);
+	leftPos   = rightPos = '25px';
+	bottomPos = 'calc((' + sdHeight + ' - ' + getStyle( searchDrawer.parentNode, 'height' ) + ') - 10px)';
+	sdBorder  = getStyle( document.documentElement, 'background-color' );
 }
+
+
+GM_addStyle('\
+.masthead {\
+	position: relative;\
+	z-index: 1;\
+}\
+\
+.masthead_strip,\
+.masthead_main {\
+	position: relative;\
+	z-index: initial;\
+}\ ' + ( ! v12Style ? '\
+\
+.masthead_main {\
+	background: ' + getStyle( document.getElementsByClassName( 'masthead' )[0], 'background-color' ) + ';\
+}\ ' : '' ) + '\
+\
+#o120-user-page-drawer {\
+	background: ' + getStyle( mastheadStrip, 'background-color' ) + ';\
+	position: absolute;\
+	left: ' + leftPos + ';\
+	right: ' + rightPos + ';\
+	bottom: 0;\
+	padding: 3px 0;\
+	border: 1px solid ' + sdBorder + ';\
+	border-top: 0;\
+	border-radius: 0 0 15px 15px;\
+	text-align: center;\
+	z-index: -1;\
+	-webkit-transition: bottom 0.4s ease-out;\
+	-moz-transition:    bottom 0.4s ease-out;\
+	-o-transition:      bottom 0.4s ease-out;\
+	transition:         bottom 0.4s ease-out;\
+}\
+#searchtextbox:focus + #o120-user-page-drawer,\
+#o120-user-page-drawer:hover,\
+#o120-user-page-drawer.active {\
+	bottom: ' + bottomPos + ';\
+}\
+\
+	.o120-rd-contain {\
+		display: inline-block;\
+		font-size: 1.1em;\
+	}\
+\
+	#o120-games-rd-contain {\
+		margin: 0 8px 0 0;\
+	}\
+\
+	#o120-user-page-rd-contain {\
+		margin: 0 0 0 8px;\
+	}\
+\
+#leader_top-wrap,\
+#leader_plus_top-wrap {\
+	position: relative;\
+	z-index: 0;\
+}\
+ ' + ( v12Style ? '\
+ .masthead_systems {\
+ 	z-index: 0;\
+ }\
+ \
+ .masthead_search {\
+ 	z-index: initial;\
+ }\
+  ' : '') );
