@@ -181,6 +181,7 @@ GM_addStyle('\
 	top: ' + topPos + ';\
 	border-radius: 0 15px 15px 0;\
 	padding: 3px 14px;\
+	max-height: 51px;\
 	-webkit-transition: left 0.4s ease-out;\
 	-moz-transition:    left 0.4s ease-out;\
 	-o-transition:      left 0.4s ease-out;\
@@ -219,6 +220,7 @@ GM_addStyle('\
 	left: ' + leftPos + ';\
 	right: auto;\
 	top: ' + topPos + ';\
+	padding: 1px 14px 3px;\
 	-webkit-transition: left 0.4s ease-out;\
 	-moz-transition:    left 0.4s ease-out;\
 	-o-transition:      left 0.4s ease-out;\
