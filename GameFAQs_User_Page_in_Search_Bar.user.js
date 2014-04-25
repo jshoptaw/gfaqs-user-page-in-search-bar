@@ -2,7 +2,7 @@
 // @name           GameFAQs User Page in Search Bar
 // @namespace      OTACON120
 // @author         OTACON120
-// @version        1.1
+// @version        1.1.1
 // @description    Adds "User Page" option to GameFAQs search bar
 // @updateURL      http://userscripts.org/scripts/source/149779.meta.js
 // @downloadURL    http://userscripts.org/scripts/source/149779.user.js
@@ -13,20 +13,6 @@
 // @exclude        http://www.gamefaqs.com/users/
 // @grant          GM_addStyle
 // ==/UserScript==
-
-/**
- * Fallback for Chrome which doesn't support GM_addStyle
- */
-if ( !this.GM_addStyle ) {
-	this.GM_addStyle = function( css ) {
-		var newStyle = document.createElement( 'style' );
-
-		newStyle.type        = 'text/css';
-		newStyle.textContent = css;
-
-		document.head.appendChild( newStyle );
-	};
-}
 
 /**
  * Get specified CSS property value
@@ -65,17 +51,18 @@ function changeSearch() {
 }
 
 function sdOnFocus() {
-	searchDrawer.className += 'active';
+	searchDrawer.className += ' active';
 }
 
 function sdOnBlur() {
-	searchDrawer.className = searchDrawer.className.replace( 'active', '' );
+	searchDrawer.className = searchDrawer.className.replace( ' active', '' );
 }
 
 var i, searchDrawerDD, searchDrawerRD, leftPos, rightPos, bottomPos, sdHeight, sdBorderColor,
 	v12Style        = document.head.querySelector( 'link[href^="/css_wide/v12"]' ), // Check if using v12 style
 	isMinimal       = document.head.querySelector( 'link[href^="/css_wide/cus_minimal"]' ), // Check if using Minimalist style
 	is800           = document.head.querySelector( 'link[href^="/css_wide/v12_new_800px"]' ), // Check if using v12 800px style
+	isRcSb          = document.head.querySelector( 'link[href^="/css_wide/retroclassic_v13_sb"]' ), // Check if using RetroClassic 13 w/ Sidebar
 	mastheadStrip   = document.getElementsByClassName('masthead_strip')[0],
 	searchForm      = document.getElementsByClassName( 'masthead_search' )[0].getElementsByClassName( 'search' )[0],
 	searchField     = document.getElementById( 'searchtextbox' ),
@@ -88,9 +75,13 @@ var i, searchDrawerDD, searchDrawerRD, leftPos, rightPos, bottomPos, sdHeight, s
 if ( isMinimal )
 	throw "stop execution";
 
-searchDrawer.id        = 'o120-user-page-drawer';
+searchDrawer.id = 'o120-user-page-drawer';
 
-if ( v12Style ) {
+if ( isRcSb ) {
+	searchDrawer.className = 'in-sidebar';
+}
+
+if ( v12Style || isRcSb ) {
 	searchDrawer.innerHTML = '<select id="o120-search-select" size="1" class="o120-search-select"><option value="game">Search GameFAQs</option><option value="find">Search Users</option></select>';
 
 	searchDrawerDD          = searchDrawer.getElementsByClassName( 'o120-search-select' )[0];
@@ -102,11 +93,11 @@ if ( v12Style ) {
 
 	searchDrawerRD         = searchDrawer.getElementsByClassName( 'o120-uprd' );
 
-for ( i = 0; i < searchDrawerRD.length; i++ ) {
-	searchDrawerRD[ i ].onclick = changeSearch;
-	searchDrawerRD[ i ].onfocus = sdOnFocus;
-	searchDrawerRD[ i ].onblur  = sdOnBlur;
-}
+	for ( i = 0; i < searchDrawerRD.length; i++ ) {
+		searchDrawerRD[ i ].onclick = changeSearch;
+		searchDrawerRD[ i ].onfocus = sdOnFocus;
+		searchDrawerRD[ i ].onblur  = sdOnBlur;
+	}
 }
 
 // Grab hidden key from regular user page search on Users page
@@ -128,15 +119,20 @@ searchForm.getElementsByTagName( 'fieldset' )[0].insertBefore( searchDrawer, inp
 
 sdHeight = getStyle( searchDrawer, 'height' );
 
+topPos = '100%';
+
 if ( v12Style ) {
 	leftPos   = ( is800 ? 0 : 45 ) + 'px';
 	rightPos  = 0;
-	bottomPos = 'calc(((' + getStyle( mastheadStrip, 'height' ) + ' - ' + getStyle( searchDrawer.parentNode, 'height' ) + ') / 2) - ' + sdHeight + ' - 10px)';
+	topPos    = 'calc(' + topPos + ' + 6px)';
 	sdBorder  = getStyle( mastheadStrip, 'border-bottom' );
+} else if ( isRcSb ) {
+	leftPos   = '160px';
+	topPos    = 0;
+	sdBorder  = getStyle( mastheadStrip, 'background-color' );
 } else {
 	leftPos   = rightPos = '25px';
-	bottomPos = 'calc((' + sdHeight + ' - ' + getStyle( searchDrawer.parentNode, 'height' ) + ') - 10px)';
-	sdBorder  = getStyle( document.documentElement, 'background-color' );
+	sdBorder  = getStyle( document.getElementsByClassName( 'masthead_strip' )[0], 'background-color' );
 }
 
 
@@ -150,33 +146,58 @@ GM_addStyle('\
 .masthead_main {\
 	position: relative;\
 	z-index: initial;\
-}\ ' + ( ! v12Style ? '\
-\
-.masthead_main {\
-	background: ' + getStyle( document.getElementsByClassName( 'masthead' )[0], 'background-color' ) + ';\
-}\ ' : '' ) + '\
-\
+}\
 #o120-user-page-drawer {\
-	background: ' + getStyle( mastheadStrip, 'background-color' ) + ';\
+	background: ' + getStyle( ( isRcSb ? mastheadStrip : document.getElementsByClassName( 'masthead_strip' )[0] ), 'background-color' ) + ';\
 	position: absolute;\
 	left: ' + leftPos + ';\
 	right: ' + rightPos + ';\
-	bottom: 0;\
-	padding: 3px 0;\
-	border: 1px solid ' + sdBorder + ';\
-	border-top: 0;\
+	top: ' + topPos + ';\
+	border: none;\
 	border-radius: 0 0 15px 15px;\
+	padding: 0;\
+	max-height: 0;\
 	text-align: center;\
+	overflow: hidden;\
 	z-index: -1;\
-	-webkit-transition: bottom 0.4s ease-out;\
-	-moz-transition:    bottom 0.4s ease-out;\
-	-o-transition:      bottom 0.4s ease-out;\
-	transition:         bottom 0.4s ease-out;\
+	-webkit-transition: max-height 0.4s ease-out,\
+						padding 0s ease-out 0.4s;\
+	-moz-transition:    max-height 0.4s ease-out,\
+						padding 0s ease-out 0.4s;\
+	-o-transition:      max-height 0.4s ease-out,\
+						padding 0s ease-out 0.4s;\
+	transition:         max-height 0.4s ease-out,\
+						padding 0s ease-out 0.4s;\
 }\
+\
+.has_skin #o120-user-page-drawer {\
+	width: 120%;\
+	left: -10%;\
+	right: 0;\
+}\
+\
+#o120-user-page-drawer.in-sidebar {\
+	left: 0;\
+	top: ' + topPos + ';\
+	border-radius: 0 15px 15px 0;\
+	padding: 3px 14px;\
+	-webkit-transition: left 0.4s ease-out;\
+	-moz-transition:    left 0.4s ease-out;\
+	-o-transition:      left 0.4s ease-out;\
+	transition:         left 0.4s ease-out;\
+}\
+\
 #searchtextbox:focus + #o120-user-page-drawer,\
 #o120-user-page-drawer:hover,\
 #o120-user-page-drawer.active {\
-	bottom: ' + bottomPos + ';\
+	border: 1px solid ' + sdBorder + ';\
+	border-top: 0;\
+	padding: 3px 0;\
+	max-height: 51px;\
+	-webkit-transition: max-height 0.4s ease-out;\
+	-moz-transition:    max-height 0.4s ease-out;\
+	-o-transition:      max-height 0.4s ease-out;\
+	transition:         max-height 0.4s ease-out;\
 }\
 \
 	.o120-rd-contain {\
@@ -192,12 +213,24 @@ GM_addStyle('\
 		margin: 0 0 0 8px;\
 	}\
 \
+#searchtextbox:focus + #o120-user-page-drawer.in-sidebar,\
+#o120-user-page-drawer.in-sidebar:hover,\
+#o120-user-page-drawer.in-sidebar.active {\
+	left: ' + leftPos + ';\
+	right: auto;\
+	top: ' + topPos + ';\
+	-webkit-transition: left 0.4s ease-out;\
+	-moz-transition:    left 0.4s ease-out;\
+	-o-transition:      left 0.4s ease-out;\
+	transition:         left 0.4s ease-out;\
+}\
+\
 #leader_top-wrap,\
 #leader_plus_top-wrap {\
 	position: relative;\
 	z-index: 0;\
 }\
- ' + ( v12Style ? '\
+' + ( v12Style ? '\
  .masthead_systems {\
  	z-index: 0;\
  }\

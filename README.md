@@ -11,6 +11,7 @@ Adds the "Find a User" search from the [Users](http://gamefaqs.com/users/) page 
 *	Adds a dropdown with a selection dropdown menu when search bar is focused
 
 	*	v12
+	*	RetroClassic 13
 
 The "Minimalist" style is currently unsupported.
 
@@ -31,6 +32,12 @@ Use with one of the following browser extensions:
 
 Release Notes
 =============
+Version 1.1.1
+-------------
+_Released 2014-04-25_
+
+*	Added support for "RetroClassic 13" site display style
+*	Dropped support for script when installed as native Google Chrome extension
 
 Version 1.1
 -----------
